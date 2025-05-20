@@ -1,0 +1,7 @@
+log/
+data/
+__pycache__/
+imgs_gen/
+model_trained/
+
+
