@@ -12,7 +12,7 @@ import os
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bs', type=int, default=400, help='batch size in training')
+    parser.add_argument('--bs', type=int, default=200, help='batch size in training')  # bs=200: 占用 21311M 显存
     parser.add_argument('--epoch', default=50, type=int, help='number of epoch in training')
     parser.add_argument('--n_skh_gen', default=20, type=int, help='assert n_skh_gen % 10 == 0')
     parser.add_argument('--save_str', type=str, default='unet_retrain', help='save string')
