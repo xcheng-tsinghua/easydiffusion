@@ -8,6 +8,7 @@ import logging
 from datetime import datetime
 import argparse
 import os
+from data.diff_dataset import DiffDataset
 
 
 def parse_args():
@@ -43,6 +44,7 @@ def main(args):
     # 数据集加载 (MNIST)
     transform = transforms.Compose([transforms.Resize(diffusion.img_size), transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
     dataset = datasets.MNIST('./data', train=True, download=False, transform=transform)
+    # dataset = DiffDataset(transform=transform)
     dataloader = DataLoader(dataset, batch_size=args.bs, shuffle=True)
 
     # sampler = torch.utils.data.RandomSampler(dataset, num_samples=50, replacement=False)
