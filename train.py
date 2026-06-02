@@ -8,7 +8,6 @@ import logging
 from datetime import datetime
 import argparse
 import os
-from data.diff_dataset import DiffDataset
 
 
 def parse_args():
