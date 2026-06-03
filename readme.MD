@@ -1,15 +1,16 @@
-
-
+# 代码运行
 ## 环境搭建
 `conda create -n dp python=3.11`  
 main packge: `torch`
 
-## 示例数据集
+## 解压示例数据集
 `unzip data.zip` 
 
------------------
+## 训练
+`python train.py`
 
-## 变量定义
+-----------------
+# Diffusion 原理
 图片加噪过程及变量`x, beta`的定义，`beta`从零到一递增，一般不会增到1，大概0.02左右合适
 
 <img src="imgs_readme/def_x_beta.png" alt="logo" width="500"/>
