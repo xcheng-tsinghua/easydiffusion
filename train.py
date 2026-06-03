@@ -1,6 +1,6 @@
 import torch
-from GaussianDiffusion import GaussianDiffusion
-from UNet import UNet
+from gaussian_diffusion import GaussianDiffusion
+from unet import UNet
 from torchvision import utils
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
