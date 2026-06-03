@@ -65,13 +65,13 @@ class GaussianDiffusion(Module):
         :param t:
         :return:
         """
-        noise = self.model(x_t, t)
-        x_0 = extract(self.sqrt_recip_alphas_bar, t, x_t.shape) * x_t - extract(self.sqrt_recip_alphas_bar_minus1, t, x_t.shape) * noise
+        eps = self.model(x_t, t)
+        x_0 = extract(self.sqrt_recip_alphas_bar, t, x_t.shape) * x_t - extract(self.sqrt_recip_alphas_bar_minus1, t, x_t.shape) * eps
 
-        model_mean = extract(self.back_inf_mean_coef2, t, x_t.shape) * x_0 + extract(self.back_inf_mean_coef1, t, x_t.shape) * x_t
-        model_std = extract(self.back_inf_std, t, x_t.shape)
+        x_t_minus1_mean = extract(self.back_inf_mean_coef2, t, x_t.shape) * x_0 + extract(self.back_inf_mean_coef1, t, x_t.shape) * x_t
+        x_t_minus1_std = extract(self.back_inf_std, t, x_t.shape)
 
-        return model_mean, model_std
+        return x_t_minus1_mean, x_t_minus1_std
 
     @torch.inference_mode()
     def inference_x_t_minus1(self, x_t, t: int):
@@ -86,14 +86,14 @@ class GaussianDiffusion(Module):
         # 生成全为 t 的张量，大小：[bs, ]
         batched_times = torch.full((bs,), t, device=self.device, dtype=torch.long)
 
-        model_mean, model_std = self.inference_mean_std(x_t, batched_times)
+        x_t_minus1_mean, x_t_minus1_std = self.inference_mean_std(x_t, batched_times)
 
         if t > 0:
-            pred_img = torch.normal(mean=model_mean, std=model_std)
+            x_t_minus1 = torch.normal(mean=x_t_minus1_mean, std=x_t_minus1_std)
         else:
-            pred_img = model_mean
+            x_t_minus1 = x_t_minus1_mean
 
-        return pred_img
+        return x_t_minus1
 
     @torch.inference_mode()
     def sample(self, batch_size=20):
@@ -104,13 +104,14 @@ class GaussianDiffusion(Module):
         """
         # 获取纯高斯噪音
         h, w = self.img_size
-        img = torch.randn((batch_size, self.channels, h, w), device=self.device)
+        x_t = torch.randn((batch_size, self.channels, h, w), device=self.device)
 
         # 倒着遍历所有时间步，从噪音还原图片
         for t in tqdm(reversed(range(self.timesteps)), total=self.timesteps, desc='sampling loop time step'):
-            img = self.inference_x_t_minus1(img, t)
+            x_t_minus1 = self.inference_x_t_minus1(x_t, t)
+            x_t = x_t_minus1
 
-        return img
+        return x_t
 
     def noise_pred_loss(self, x_0, t):
         """
@@ -120,26 +121,26 @@ class GaussianDiffusion(Module):
         :return: 模型在当前时间步预测噪音的损失
         """
         # 生成正态分布噪音
-        noise = torch.randn_like(x_0)
+        eps = torch.randn_like(x_0)
 
         # 获取 t 时间步下加噪后的图片
-        x_t = extract(self.sqrt_1minus_alphas_bar, t, x_0.shape) * noise + extract(self.sqrt_alphas_bar, t, x_0.shape) * x_0
+        x_t = extract(self.sqrt_1minus_alphas_bar, t, x_0.shape) * eps + extract(self.sqrt_alphas_bar, t, x_0.shape) * x_0
 
         # 获取模型预测的原始图片
-        noise_pred = self.model(x_t, t)
+        eps_pred = self.model(x_t, t)
 
-        return F.mse_loss(noise_pred, noise)
+        return F.mse_loss(eps_pred, eps)
 
-    def forward(self, img):
+    def forward(self, x_0):
         """
-        :param img: 原始草图 [bs, pnt_channel, n_skh_pnt]
+        :param x_0: 原始草图 [bs, pnt_channel, n_skh_pnt]
         :return: 噪音预测损失
         """
-        bs = img.size(0)
-        device = img.device
+        bs = x_0.size(0)
+        device = x_0.device
 
         # 为每个批量的图片生成时间步
         t = torch.randint(0, self.timesteps, (bs,), device=device).long()  # -> [bs, ]
 
-        return self.noise_pred_loss(img, t)
+        return self.noise_pred_loss(x_0, t)
 
