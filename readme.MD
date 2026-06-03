@@ -1,16 +1,18 @@
 # 1. 代码结构
 ## 1.1. 文件结构
+```
 easydiffusion\
     gaussian_diffusion.py
     unet.py
     train.py
     data.zip
-
+```
 ## 1.2. 依赖关系
+```
 train.py
     ├─ gaussian_diffusion.py
     └─ unet.py
-
+```
 # 2. 代码运行
 ## 2.1. 环境搭建
 `conda create -n dp python=3.11`  
